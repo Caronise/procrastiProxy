@@ -25,14 +25,12 @@ func (b BlockList) Blocked(url string) bool {
 	return b[url]
 }
 
-const port string = ":8888"
-
 func redirect(w http.ResponseWriter, req *http.Request) {
 	fmt.Println("Accessed homepage...")
 	//http.Redirect(w, req, "example.com", 403)
 }
 
-func Listener() {
+func Listener(port string) {
 	http.HandleFunc("/", redirect)
 
 	fmt.Printf("Listening on port %s\n", port)

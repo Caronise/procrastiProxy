@@ -37,12 +37,15 @@ func TestBlocked(t *testing.T) {
 }
 
 func TestRequestToUnblockedURLReturns200(t *testing.T) {
+	t.Parallel()
 
-	go proxy.Listener()
+	port := ":8001"
+
+	go proxy.Listener(port)
 
 	// make a request to the proxy
 	for i := 0; i < 3; i++ {
-		conn, err := net.Dial("tcp", "127.0.0.1:8888")
+		conn, err := net.Dial("tcp", "127.0.0.1"+port)
 		if err == nil {
 			fmt.Println("Server is up!")
 			conn.Close()
@@ -52,7 +55,7 @@ func TestRequestToUnblockedURLReturns200(t *testing.T) {
 		time.Sleep(time.Millisecond * 30)
 	}
 
-	response, err := http.Get("http://127.0.0.1:8888")
+	response, err := http.Get("http://127.0.0.1" + port)
 	if err != nil {
 		t.Fatal("Error getting address", err)
 	}
@@ -66,12 +69,15 @@ func TestRequestToUnblockedURLReturns200(t *testing.T) {
 }
 
 func TestRequestToBlockURLReturns403(t *testing.T) {
+	t.Parallel()
 
-	go proxy.Listener()
+	port := ":8002"
+
+	go proxy.Listener(port)
 
 	// make a request to the proxy
 	for i := 0; i < 3; i++ {
-		conn, err := net.Dial("tcp", "127.0.0.1:8888")
+		conn, err := net.Dial("tcp", "127.0.0.1"+port)
 		if err == nil {
 			fmt.Println("Server is up!")
 			conn.Close()
@@ -81,7 +87,7 @@ func TestRequestToBlockURLReturns403(t *testing.T) {
 		time.Sleep(time.Millisecond * 30)
 	}
 
-	response, err := http.Get("http://127.0.0.1:8888")
+	response, err := http.Get("http://127.0.0.1" + port)
 	if err != nil {
 		t.Fatal("Error getting address", err)
 	}
