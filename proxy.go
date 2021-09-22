@@ -4,6 +4,7 @@ package proxy
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
 )
 
@@ -23,23 +24,33 @@ func (b BlockList) UnBlock(url string) {
 
 // func Blocked will check if ipAddr is blocked by ranging over BlockList.
 func (b BlockList) Blocked(url string) bool {
-	return b[url]
+	u := ExtractDomain(url)
+	return b[u]
 }
 
-func redirect(w http.ResponseWriter, req *http.Request) {
-	fmt.Printf("Got request for %q\n", req.RequestURI)
-	if req.RequestURI == "http://blocked.com/" {
-		http.Error(w, "No soup for you", http.StatusForbidden)
+func ExtractDomain(u string) string {
+	data, err := url.Parse(u)
+	if err != nil {
+		return ""
 	}
+	return data.Host
 }
 
-func ListenAsync(addr string) *sync.WaitGroup {
+func ListenAsync(addr string, blockList BlockList) *sync.WaitGroup {
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		wg.Done()
 		mux := http.NewServeMux()
-		mux.HandleFunc("/", redirect)
+		mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+			fmt.Println("blockList is:", blockList)
+			fmt.Println("req is:", req)
+			fmt.Println("req.RequestURI is:", req.RequestURI)
+			if blockList.Blocked(req.RequestURI) {
+				fmt.Println("Checking if blocked...")
+				http.Error(w, "No soup for you", http.StatusForbidden)
+			}
+		})
 		fmt.Printf("Listening on port %s\n", addr)
 		err := http.ListenAndServe(addr, mux)
 		if err != nil {
