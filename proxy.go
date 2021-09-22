@@ -4,6 +4,7 @@ package proxy
 import (
 	"fmt"
 	"net/http"
+	"sync"
 )
 
 type BlockList map[string]bool
@@ -26,17 +27,24 @@ func (b BlockList) Blocked(url string) bool {
 }
 
 func redirect(w http.ResponseWriter, req *http.Request) {
-	fmt.Println("Accessed homepage...")
-	//http.Redirect(w, req, "example.com", 403)
+	fmt.Printf("Got request for %q\n", req.RequestURI)
+	if req.RequestURI == "http://blocked.com/" {
+		http.Error(w, "No soup for you", http.StatusForbidden)
+	}
 }
 
-func Listener(port string) {
-	http.HandleFunc("/", redirect)
-
-	fmt.Printf("Listening on port %s\n", port)
-	err := http.ListenAndServe(port, nil)
-	if err != nil {
-		fmt.Println("Error listening:", err)
-	}
-
+func ListenAsync(addr string) *sync.WaitGroup {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		wg.Done()
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", redirect)
+		fmt.Printf("Listening on port %s\n", addr)
+		err := http.ListenAndServe(addr, mux)
+		if err != nil {
+			fmt.Println("Error listening:", err)
+		}
+	}()
+	return &wg
 }
